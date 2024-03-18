@@ -13,6 +13,7 @@ class SquareItem extends SceneItem {
   SquareItem({
     required Color colour,
     required double sideLength,
+    super.label = 'sq',
   }) : _colour = colour,
         _sideLength = sideLength;
 
@@ -25,6 +26,7 @@ class SquareItem extends SceneItem {
       sideLength: _sideLength,
       colour: _colour,
       n: 4,
+      label: label,
     ).compile();
   }
 }

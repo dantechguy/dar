@@ -3,17 +3,19 @@ import 'package:drender/extensions.dart';
 import 'package:drender/process_items.dart';
 import 'package:drender/render_items.dart';
 import 'package:drender/scene.dart';
+import 'package:drender/scene_items/scene_item.dart';
 import 'package:flutter/material.dart';
-import 'package:vector_math/vector_math.dart' hide Colors;
 
 class DrenPainter extends CustomPainter {
   const DrenPainter({
+    this.counter,
     required this.camera,
-    required this.scene,
+    required this.items,
   });
 
-  final DrenCamera camera;
-  final DrenScene scene;
+  final CameraD camera;
+  final List<SceneItem> items;
+  final int? counter;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -23,25 +25,32 @@ class DrenPainter extends CustomPainter {
     //   Paint()
     //     ..color = Colors.red,
     // );
-
-    canvas.translate(size.width/2, size.height/2);
-    canvas.clipRect(Rect.fromCenter(center: Offset.zero, width: size.width, height: size.height));
+    canvas.drawColor(Colors.grey, BlendMode.src);
+    canvas.translate(size.width / 2, size.height / 2);
+    canvas.clipRect(Rect.fromCenter(
+        center: Offset.zero, width: size.width, height: size.height));
 
     // final path = Path();
-    // canvas.drawLine(Offset(0, 100), Offset(0, -100), Paint()..color = Colors.blue..style = PaintingStyle.stroke..strokeWidth = 2.0);
+    // canvas.drawLine(Offset(-size.width/2, 0), Offset(size.width/2, 0), Paint()..color = Colors.blue..style = PaintingStyle.stroke..strokeWidth = 1.0);
 
-    print('render');
-    final List<RenderItem> renderItems = scene.items
-        .map((item) => item.compile())
-        .flatten()
-        .map((pItem) => pItem.optimise(camera))
-        .flatten()
-        .map((pItem) => pItem.compile(camera))
-        .flatten()
+    // print('render');
+    final List<RenderItem> renderItems = GroupProcessItem(
+            children: items
+                .map((item) => item.compile())
+                .flatten()
+                .map((pItem) => pItem.process(camera))
+                .flatten()
+                .toList())
+        .sort(null, camera)
+        .compile(camera)
         .toList();
-    print('rendered ${renderItems.length} items');
-    for (final r in renderItems) {
+    // print('rendered ${renderItems.length} items');
+    final count = counter == null ? renderItems.length : counter! % (renderItems.length*1.4).toInt();
+    // print(count);
+    for (final r in renderItems.take(count)) {
+      canvas.save();
       r.render(canvas, size);
+      canvas.restore();
     }
   }
 

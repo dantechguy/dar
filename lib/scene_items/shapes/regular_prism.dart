@@ -16,6 +16,7 @@ class RegularPrismItem extends SceneItem {
     required double radius,
     required Color colour,
     required int n,
+    super.label,
   }) : _height = height,
         _radius = radius,
         _colour = colour,

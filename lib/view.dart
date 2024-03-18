@@ -1,17 +1,21 @@
 import 'package:drender/camera.dart';
 import 'package:drender/painter.dart';
 import 'package:drender/scene.dart';
+import 'package:drender/scene_items/scene_item.dart';
 import 'package:flutter/material.dart';
 
-class DrenView extends StatelessWidget {
-  const DrenView({
+// TODO: Rename to something 'canvas'?
+class ViewDAR extends StatelessWidget {
+  const ViewDAR({
     required this.camera,
-    required this.scene,
+    required this.items,
+    this.counter,
     super.key,
   });
 
-  final DrenCamera camera;
-  final DrenScene scene;
+  final CameraD camera;
+  final List<SceneItem> items;
+  final int? counter;
 
   @override
   Widget build(BuildContext context) {
@@ -20,8 +24,9 @@ class DrenView extends StatelessWidget {
       height: double.infinity,
       child: CustomPaint(
         painter: DrenPainter(
+          counter: counter,
           camera: camera,
-          scene: scene,
+          items: items,
         ),
       ),
     );

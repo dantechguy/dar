@@ -32,6 +32,7 @@ class ShadeItem extends SceneItem {
 
 // TODO: needs testing
   void _applyShadingRecursive(ProcessItem pItem) {
+    // TODO: make switch case exhaustive (as in, wont compile w/out)
     switch (pItem) {
       case TriProcessItem():
         // TODO: finish implementing
@@ -43,14 +44,14 @@ class ShadeItem extends SceneItem {
         }
         if (_directionalLights != null && _directionalLights!.isNotEmpty) {
           final directional = [
-            for (final (dir, col) in _directionalLights)
+            for (final (dir, col) in _directionalLights!)
               _calculateDiffuseComponent(pItem, (dir, col))
           ].reduce((c, e) => c + e);
           components.add(directional);
         }
         if (_pointLights != null && _pointLights!.isNotEmpty) {
           final point = [
-            for (final (pos, col) in _directionalLights)
+            for (final (pos, col) in _directionalLights!)
               _calculateDiffuseComponent(pItem, (pItem.midpoint - pos, col))
           ].reduce((c, e) => c + e);
           components.add(point);
@@ -60,7 +61,7 @@ class ShadeItem extends SceneItem {
         render.a = 1;
         pItem.colour = render.toColor();
 
-      case LayerProcessItem():
+      case GroupProcessItem():
         pItem.children.map(_applyShadingRecursive);
     }
   }
@@ -78,8 +79,9 @@ class ShadeItem extends SceneItem {
       TriProcessItem pItem, (Vector3, Color) lightRay) {
     // render colour = normal multiplier * light colour * object colour
     final (lightDirection, lightColour) = lightRay;
-    final double diffuseStrength =
+    double diffuseStrength =
         max(0, -lightDirection.normalized().dot(pItem.vertices.normal));
+    diffuseStrength *= lightColour.toVector().a;
     final diffuseColour = lightColour.toVector();
     final diffuseComponent = diffuseColour * diffuseStrength;
     diffuseComponent.a = 1;

@@ -1,23 +1,27 @@
 import 'dart:ui';
 
 import 'package:drender/camera.dart';
+import 'package:drender/sorting/dag_sorting.dart';
+import 'package:drender/sorting/sort.dart';
 import 'package:vector_math/vector_math.dart';
 
 import 'extensions.dart';
-import 'key.dart';
 import 'projection.dart';
 import 'render_items.dart';
 
 sealed class ProcessItem {
-  DrenKey? get key;
+  ProcessItem({this.label = ''});
+
+  final String label;
 
   List<RenderItem> compile(
-    DrenCamera camera,
+    CameraD camera,
   );
 
   Vector3 get midpoint;
 
-  void sort(ProcessItem rTree, DrenCamera camera);
+  // TODO: swap parameter order. make sortedTree optional?
+  ProcessItem sort(ProcessItem? prevSortedTree, CameraD camera);
 
   /// Removes and re-formats polygons for performance
   /// - Removes tris which face away from the camera
@@ -29,18 +33,16 @@ sealed class ProcessItem {
   /// - A tri split into multiple will be several objects in a list.
   ///
   /// TODO: find out if optimise or sort first is faster
-  List<ProcessItem> optimise(DrenCamera camera);
+  List<ProcessItem> process(CameraD camera);
 }
 
 /// A SLRG. Contains a list of other
-class LayerProcessItem extends ProcessItem {
-  LayerProcessItem({
-    this.key,
+class GroupProcessItem extends ProcessItem {
+  GroupProcessItem({
+    super.label,
     required this.children,
   });
 
-  @override
-  DrenKey? key;
   List<ProcessItem> children;
 
   // TODO: implement this better
@@ -50,23 +52,37 @@ class LayerProcessItem extends ProcessItem {
       children.length.toDouble();
 
   @override
-  List<RenderItem> compile(DrenCamera camera) {
+  List<RenderItem> compile(CameraD camera) {
     return children.map((child) => child.compile(camera)).flatten().toList();
   }
 
   // TODO: implement
   @override
-  ProcessItem sort(ProcessItem rTree, DrenCamera camera) {
-    // If child key matches child key of similarTree, pass that subtree down.
+  ProcessItem sort(ProcessItem? prevSortedTree, CameraD camera) {
+    for (final child in children) {
+      // TODO: Pass down correct prevSortedTree
+      child.sort(prevSortedTree, camera);
+    }
+
+    // TODO: Use prevSortedTree to speed up
+    // children.sort((a, b) {
+    //   final res = compareProcessItem(a, b, camera).sortInt;
+    //   print('sortresult: $res');
+    //   return res;
+    // });
+
+    children = sortPreorder(
+      children,
+      (a, b) => compareProcessItem(a, b, camera).sortInt,
+    );
+
     return this;
   }
 
   @override
-  List<ProcessItem> optimise(DrenCamera camera) {
-    final List<ProcessItem> newChildren = children
-        .map((e) => e.optimise(camera))
-        .flatten()
-        .toList();
+  List<ProcessItem> process(CameraD camera) {
+    final List<ProcessItem> newChildren =
+        children.map((e) => e.process(camera)).flatten().toList();
 
     if (newChildren.length <= 1) {
       return newChildren;
@@ -77,15 +93,15 @@ class LayerProcessItem extends ProcessItem {
   }
 }
 
+// TODO: add convex hull ProcessItem
+
 class TriProcessItem extends ProcessItem {
   TriProcessItem({
-    this.key,
+    super.label,
     required this.vertices,
     required this.colour,
   });
 
-  @override
-  DrenKey? key;
   (Vector3, Vector3, Vector3) vertices;
   Color colour;
 
@@ -93,64 +109,54 @@ class TriProcessItem extends ProcessItem {
   Vector3 get midpoint => vertices.toList.reduce((c, x) => c + x) / 3;
 
   @override
-  List<RenderTri> compile(DrenCamera camera) {
+  List<RenderTri> compile(CameraD camera) {
     return [
       RenderTri(
         vertices: vertices.map((v) => project3DTo2D(v, camera)),
         colour: colour,
+        label: label,
       )
     ];
   }
 
   @override
-  void sort(ProcessItem rTree, DrenCamera camera) {}
+  ProcessItem sort(ProcessItem? prevSortedTree, CameraD camera) {
+    return this;
+  }
 
   @override
-  List<ProcessItem> optimise(DrenCamera camera) {
+  List<ProcessItem> process(CameraD camera) {
     final cameraPlane = camera.plane;
 
     // If tri is completely behind the camera, delete.
-    // TODO: check using a plane slightly in front. becomes view frustum culling ish
     // TODO: Make this culling distance a constant
-    if (vertices.toList.every((vertex) => vertex.behind(cameraPlane.planeInFrontAlongNormal(0.1)))) {
-      print('deleted: all behind camera');
+    // TODO: Fix planeInfrontAlongNormal. It's broken!
+    if (vertices.toList.every(
+        (vertex) => vertex.behind(cameraPlane.planeInFrontAlongNormal(0.1)))) {
       return [];
     }
 
     // If tri faces away from the camera, delete.
     if (camera.position.behind(vertices.plane)) {
-      print('deleted: facing away');
       return [];
     }
 
+    // TODO: I think the discrepancy here and the split line is causing it to only return one tri from the split.
+    // TODO: To fix, remove the prior check. Do the split immediately and if it returns non-null then continue. Or, just make sure that the prior check is the same as the proceding one.
+    // TODO: although doing this causes a stackoverflow
+    /* TODO:
+        - actually this should be fine
+        - i don't see why it would stackoverflow
+     */
     if (vertices.intersectsPlane(cameraPlane)) {
-      // TODO: i think it is infinitely splitting
-      // either have an 'already split' flag, or I'm going to need to
-      // think about consistency of 'in front', 'on line', and 'behind'.
-      // I've been treating in front/behind as XOR vals. May need some level of error
-      // margin, and if a tri's vertex lies 'on' a plane then it doesn't count as
-      // an intersection.
-      // Either way I think I'll need to implement both. The more conscious
-      // handling of on/off line is important for code quality. But having a
-      // flag for 'already split' to prevent infinite recursion will still be
-      // necessary given the uncertain nature of floats and epsilon comparisons.
-      // TODO: best guess is that intersects plane is not stable (float err')
-
-      // FLICKERING:
-      // It's because even though the tri is being clipped, the points are *just*
-      // one the plane, so the projection is flipping between the two sides.
-      print('split: crosses camera plane');
-      // TODO: remove splitOnCameraPlane now that we have constant
       // TODO: make this forward split distance a constant
-      final (tri1, tri2!, tri3!) = vertices.splitOnPlane(cameraPlane.planeInFrontAlongNormal(0.05));
+      final (tri1, tri2!, tri3!) =
+          vertices.splitOnPlane(cameraPlane.planeInFrontAlongNormal(0.05));
       final tris = [tri1, tri2, tri3]
           .map((tri) => TriProcessItem(vertices: tri, colour: colour))
           .toList();
-      return LayerProcessItem(children: tris)
-          .optimise(camera);
+      return GroupProcessItem(children: tris).process(camera);
     }
-
-
 
     // Otherwise, return as normal.
     return [this];

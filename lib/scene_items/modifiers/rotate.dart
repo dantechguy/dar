@@ -14,17 +14,41 @@ enum CartesianAxis {
   positiveZ(),
   negativeZ();
 
-  const CartesianAxis();
+  factory CartesianAxis.up() => CartesianAxis.positiveZ;
+  factory CartesianAxis.down() => CartesianAxis.negativeZ;
+  factory CartesianAxis.north() => CartesianAxis.positiveX;
+  factory CartesianAxis.south() => CartesianAxis.negativeX;
+  factory CartesianAxis.east() => CartesianAxis.positiveY;
+  factory CartesianAxis.west() => CartesianAxis.negativeY;
+
+  factory CartesianAxis.posZ() => CartesianAxis.positiveZ;
+  factory CartesianAxis.negZ() => CartesianAxis.negativeZ;
+  factory CartesianAxis.posX() => CartesianAxis.positiveX;
+  factory CartesianAxis.negX() => CartesianAxis.negativeX;
+  factory CartesianAxis.posY() => CartesianAxis.positiveY;
+  factory CartesianAxis.negY() => CartesianAxis.negativeY;
+
+  String get cardinalName => switch (this) {
+    CAxis.positiveZ => 'up',
+    CAxis.negativeZ => 'down',
+    CAxis.positiveX => 'north',
+    CAxis.negativeX => 'south',
+    CAxis.positiveY => 'east',
+    CAxis.negativeY => 'west',
+  };
+
 
   Vector3 get unitVector => switch (this) {
-        CartesianAxis.positiveX => Vector3(1, 0, 0),
-        CartesianAxis.negativeX => Vector3(-1, 0, 0),
-        CartesianAxis.positiveY => Vector3(0, 1, 0),
-        CartesianAxis.negativeY => Vector3(0, -1, 0),
-        CartesianAxis.positiveZ => Vector3(0, 0, 1),
-        CartesianAxis.negativeZ => Vector3(0, 0, -1),
+        CAxis.positiveX => Vector3(1, 0, 0),
+        CAxis.negativeX => Vector3(-1, 0, 0),
+        CAxis.positiveY => Vector3(0, 1, 0),
+        CAxis.negativeY => Vector3(0, -1, 0),
+        CAxis.positiveZ => Vector3(0, 0, 1),
+        CAxis.negativeZ => Vector3(0, 0, -1),
       };
 }
+
+typedef CAxis = CartesianAxis;
 
 // Allow Quaternion rotationFromPosZ, pointAndRotate, and CartesianAxis
 
@@ -36,7 +60,7 @@ class RotateItem extends SceneItem {
         _child = child;
 
   RotateItem.aroundAxis({
-    required CartesianAxis axis,
+    required CAxis axis,
     required double rotation,
     required SceneItem child,
   })  : _rotation = Quaternion.axisAngle(axis.unitVector, rotation),

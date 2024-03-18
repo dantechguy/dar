@@ -9,11 +9,11 @@ import 'process_items.dart';
 typedef DrenderPaintCallback = void Function(
     Canvas canvas,
     Size size,
-    DrenCamera camera,
+    CameraD camera,
     );
 
-class DrenScene {
-  DrenScene({
+class SceneDAR {
+  SceneDAR({
     required this.items,
   });
 

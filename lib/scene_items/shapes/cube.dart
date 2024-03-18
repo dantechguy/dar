@@ -17,40 +17,44 @@ class CubeItem extends SceneItem {
   CubeItem.fromSize({
     required double size,
     required Color colour,
-    Map<CartesianAxis, Color> faceColours = const {},
+    Map<CAxis, Color> faceColours = const {},
+    super.label,
   })  : _colour = colour,
         _sideLength = size,
         _faceColours = faceColours;
 
-
   final double _sideLength;
   final Color _colour;
-  final Map<CartesianAxis, Color> _faceColours;
+  final Map<CAxis, Color> _faceColours;
 
   @override
   List<ProcessItem> compile() {
-    final List<(CartesianAxis, double)> rotations = [
-      (CartesianAxis.positiveX, pi / 2),
-      (CartesianAxis.positiveX, -pi / 2),
-      (CartesianAxis.positiveY, pi / 2),
-      (CartesianAxis.positiveY, -pi / 2),
-      (CartesianAxis.positiveY, pi),
-      (CartesianAxis.positiveY, 0),
+    final List<(CAxis, double, String)> rotations = [
+      (CAxis.positiveX, pi / 2, 'east'),
+      (CAxis.positiveX, -pi / 2, 'west'),
+      (CAxis.positiveY, pi / 2, 'north'),
+      (CAxis.positiveY, -pi / 2, 'south'),
+      (CAxis.positiveY, pi, 'down'),
+      (CAxis.positiveY, 0, 'up'),
     ];
     final List<SceneItem> faces = [
-      for (final (axis, rotation) in rotations)
+      for (final (axis, rotation, name) in rotations)
         RotateItem.aroundAxis(
           axis: axis,
           rotation: rotation,
           child: TranslateItem.fromVector(
-            translate: Vector3(0, 0, _sideLength/2),
+            translate: Vector3(0, 0, _sideLength / 2),
             child: SquareItem(
               colour: _faceColours[axis] ?? _colour,
               sideLength: _sideLength,
+              label: name[0],
             ),
           ),
         )
     ];
-    return faces.map((e) => e.compile()).flatten().toList();
+    return faces
+        .map((e) => e.compile())
+        .flatten()
+        .toList();
   }
 }

@@ -6,18 +6,36 @@ import 'package:vector_math/vector_math.dart';
 import 'sort.dart';
 
 SortResult sortTriTriParallel(
-    TriProcessItem a, TriProcessItem b, DrenCamera camera) {
-  final aDist = camera.plane.distanceToVector3(a.vertices.$1);
-  final bDist = camera.plane.distanceToVector3(b.vertices.$1);
+    TriProcessItem a, TriProcessItem b, CameraD camera) {
+  // final aDist = camera.plane.distanceToVector3(a.vertices.$1);
+  // final bDist = camera.plane.distanceToVector3(b.vertices.$1);
+  //
+  // if (aDist > 0 != bDist > 0) return SortResult.None;
+  // return (aDist > 0) == (aDist < bDist)
+  //     ? SortResult.AInfrontofB
+  //     : SortResult.ABehindB;
 
-  if (aDist > 0 != bDist > 0) return SortResult.None;
-  return (aDist > 0) == (aDist < bDist)
-      ? SortResult.AInfrontofB
-      : SortResult.ABehindB;
+  // print('sortres: parallel: coplanar');
+  // If coplanar then no ordering
+  // TODO: extract constant
+  if ((a.vertices.plane.constant - b.vertices.plane.constant).abs() < 0.01) {
+    return SortResult.None;
+  }
+
+  // TODO: This bug could be caused by trying to sort with a total order algorithm on a partial order.
+
+  final otherSideOfA = a.vertices.plane.allOnSameSideOfPlane([camera.position, b.vertices.$1]);
+  final otherSideOfB = b.vertices.plane.allOnSameSideOfPlane([camera.position, a.vertices.$1]);
+
+  // print('sortres: parallel: $otherSideOfA, $otherSideOfB');
+
+  if (otherSideOfA && !otherSideOfB) return SortResult.ABehindB;
+  if (!otherSideOfA && otherSideOfB) return SortResult.AInfrontofB;
+  return SortResult.None;
 }
 
-SortResult sortTriTriNeitherInIntersectionLine(
-    TriProcessItem a, TriProcessItem b, DrenCamera camera) {
+SortResult sortTriTriNeitherOnIntersectionLine(
+    TriProcessItem a, TriProcessItem b, CameraD camera) {
   final bPlane = b.vertices.plane;
   final aInFrontOfB = a.vertices.$1.inFrontOf(bPlane);
   final cameraInFrontOfB = camera.position.inFrontOf(bPlane);
@@ -33,29 +51,36 @@ SortResult sortTriTriNeitherInIntersectionLine(
 }
 
 SortResult sortTriTriFirstOnIntersectionLine(
-    TriProcessItem a, TriProcessItem b, DrenCamera camera) {
+    TriProcessItem a, TriProcessItem b, CameraD camera) {
   return a.vertices.plane.allOnSameSideOfPlane([camera.position, b.vertices.$1])
       ? SortResult.ABehindB
       : SortResult.AInfrontofB;
 }
 
 SortResult sortTriTriSecondOnIntersectionLine(
-    TriProcessItem a, TriProcessItem b, DrenCamera camera) {
+    TriProcessItem a, TriProcessItem b, CameraD camera) {
   return sortTriTriFirstOnIntersectionLine(b, a, camera).opposite();
 }
 
 // TODO: needs big testing.
 SortResult sortTriTriBothOnIntersectionLine(
-    TriProcessItem a, TriProcessItem b, DrenCamera camera) {
-  final line = a.vertices.normal.cross(b.vertices.normal);
+    TriProcessItem a, TriProcessItem b, CameraD camera) {
+  final line = a.vertices.normal.cross(b.vertices.normal).normalized();
 
   final aPlane = a.vertices.plane;
   final bPlane = b.vertices.plane;
 
+  // TODO: Handle the case where one edge is parallel to the line
+
+
+  // TODO: make this a constant, or change how this works to be more robust?
+  const planeThicknessEpsilon = 0.001;
+
   final aIntersectingEdges =
-      a.vertices.edgeList.where((edge) => edge.intersectsPlane(bPlane));
+      a.vertices.edgeList.where((edge) => edge.intersectsOrMeetsPlane(bPlane, eps: planeThicknessEpsilon)).take(2);
   final bIntersectingEdges =
-      b.vertices.edgeList.where((edge) => edge.intersectsPlane(aPlane));
+      b.vertices.edgeList.where((edge) => edge.intersectsOrMeetsPlane(aPlane, eps: planeThicknessEpsilon)).take(2);
+
   assert(aIntersectingEdges.length == 2);
   assert(bIntersectingEdges.length == 2);
 
@@ -69,29 +94,30 @@ SortResult sortTriTriBothOnIntersectionLine(
         double distance
       })> edgePointDistance = aIntersectingEdges
           .map((edge) => (edge: edge, point: edge.intersectPlane(bPlane)))
-          .map((r) => (
+          .map((rec) => (
                 isTriA: true,
-                edge: r.edge,
-                point: r.point,
-                distance: r.point.dot(line)
+                edge: rec.edge,
+                point: rec.point,
+                distance: rec.point.dot(line)
               ))
           .toList() +
       bIntersectingEdges
           .map((edge) => (edge: edge, point: edge.intersectPlane(aPlane)))
-          .map((r) => (
+          .map((rec) => (
                 isTriA: false,
-                edge: r.edge,
-                point: r.point,
-                distance: r.point.dot(line)
+                edge: rec.edge,
+                point: rec.point,
+                distance: rec.point.dot(line)
               ))
           .toList();
   edgePointDistance.sort((a, b) => a.distance.compareTo(b.distance));
 
   // An invalid configuration, which can occur when the tris overlap.
   if (edgePointDistance[0].isTriA == edgePointDistance[3].isTriA) {
-    return edgePointDistance[0].isTriA
-        ? SortResult.AInfrontofB
-        : SortResult.ABehindB;
+    // return edgePointDistance[0].isTriA
+    //     ? SortResult.AInfrontofB
+    //     : SortResult.ABehindB;
+    return SortResult.None;
   }
 
   final aIntersectionPoint = edgePointDistance[0].isTriA

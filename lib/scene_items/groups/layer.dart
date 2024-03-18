@@ -19,7 +19,7 @@ class DrenderLayer extends SceneItem {
   @override
   List<ProcessItem> compile() {
     return [
-      LayerProcessItem(
+      GroupProcessItem(
         children: children
             .map((child) => child.compile())
             .flatten()

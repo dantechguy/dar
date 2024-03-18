@@ -1,8 +1,12 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:drender/camera.dart';
-import 'package:drender/scene.dart';
+import 'package:drender/scene_items/groups/group.dart';
+import 'package:drender/scene_items/modifiers/invert.dart';
 import 'package:drender/scene_items/modifiers/rotate.dart';
-import 'package:drender/scene_items/modifiers/transform.dart';
-import 'package:drender/scene_items/shapes/cube.dart';
+import 'package:drender/scene_items/modifiers/shade.dart';
+import 'package:drender/tempexample.dart';
 import 'package:flutter/material.dart';
 import 'package:vector_math/vector_math.dart' hide Colors;
 
@@ -34,30 +38,22 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   double hRot = 0;
   double vRot = 0;
+  double xCoord = 0;
+  double yCoord = 0;
+  double zCoord = 0;
+  int renderAmountCounter = 0;
+  double objectRotation = 0;
 
   @override
   void initState() {
     super.initState();
 
-    //   final camera = DrenCamera.fromPositiveX(
-    //       position: Vector3(0, 0, 0),
-    //       rotation: Quaternion.axisAngle(Vector3(0, 0, 1), hRot));
-    //
-    //   item = TransformItem.fromScaleRotateTranslate(
-    //     rotate: Quaternion.axisAngle(CartesianAxis.positiveY.unitVector, -pi / 2),
-    //     translate: Vector3(5, 0, 0),
-    //     child: SquareItem(
-    //       sideLength: 5,
-    //       colour: Colors.red,
-    //     ),
-    //   );
-    //   final processItems = item.compile();
-    //   for (final pi in processItems)
-    //     print('process item: ${pi is TriProcessItem ? pi.vertices : ''}');
-    //   final renderItems =
-    //   processItems.map((e) => e.compile(camera)).flatten().toList();
-    //   for (final ril in renderItems)
-    //     print('render item: ${ril is RenderTri ? ril.vertices : ''}');
+    Timer.periodic(
+        Duration(milliseconds: 10),
+        (timer) => setState(() {
+              renderAmountCounter++;
+              objectRotation += 0.01;
+            }));
   }
 
   @override
@@ -66,31 +62,51 @@ class _MainScreenState extends State<MainScreen> {
         body: GestureDetector(
       onPanUpdate: (DragUpdateDetails details) {
         setState(() {
-          hRot += details.delta.dx / 100;
-          vRot += details.delta.dy / 100;
+          if (details.globalPosition.dx <
+              MediaQuery.of(context).size.width / 5) {
+            zCoord += -details.delta.dy / 10;
+          } else if (details.globalPosition.dx <
+              MediaQuery.of(context).size.width / 2) {
+            xCoord += (-math.cos(hRot) * details.delta.dy / 10) +
+                (math.sin(hRot) * details.delta.dx / 10);
+            yCoord += (math.sin(hRot) * details.delta.dy / 10) +
+                (math.cos(hRot) * details.delta.dx / 10);
+          } else {
+            hRot += -details.delta.dx / 100;
+            vRot += -details.delta.dy / 100;
+          }
         });
       },
-      child: DrenView(
-        camera: DrenCamera.fromPositiveX(
-            fov: 0.005,
-            position: Vector3(0, 0, 0),
-            rotation: Quaternion.axisAngle(Vector3(0, 0, 1), 0)),
-        scene: DrenScene(items: [
-          TransformItem.fromSRT(
-            rotate:
-                Quaternion.axisAngle(CartesianAxis.positiveZ.unitVector, hRot),
-            translate: Vector3(2, 0, 0),
+      child: ViewDAR(
+        // counter: renderAmountCounter,
+        // camera: CameraD.fromPositiveX(
+        //   fov: 0.005,
+        //   position: Vector3(xCoord, yCoord, 0),
+        //   rotation: Quaternion.axisAngle(CAxis.positiveZ.unitVector, hRot),
+        // ),
+        camera: CameraD.fromYawPitchRoll(
+          fov: 200,
+          position: Vector3(xCoord, yCoord, zCoord),
+          // TODO: why is this not what i expect?
+          yawPitchRoll: Vector3(vRot, 0, hRot),
+        ),
+        items: [
+          ShadeItem(
+            ambientLight: Colors.white.withOpacity(.2),
+            directionalLights: [
+              (Vector3(-.5, 1, -2), Colors.yellow.withOpacity(0.2)),
+              (Vector3(1, -2, -2), Colors.red.withOpacity(0.01)),
+            ],
             child: RotateItem.aroundAxis(
-              axis: CartesianAxis.positiveY,
-              rotation: vRot,
-              child: CubeItem.fromSize(
-                size: 2.31,
-                colour: Colors.red,
-              ),
-            ),
+                axis: CAxis.up(),
+                rotation: objectRotation,
+                child: InvertItem(
+                  child: DRenderGroup(
+                    children: mesh,
+                  ),
+                )),
           ),
-          // item,
-        ]),
+        ],
       ),
     ));
   }

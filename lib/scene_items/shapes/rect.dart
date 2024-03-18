@@ -10,6 +10,7 @@ class RectItem extends SceneItem {
   RectItem({
     required Color colour,
     required (Vector3, Vector3, Vector3, Vector3) vertices,
+    super.label
   })  : _colour = colour,
         _v = vertices;
 

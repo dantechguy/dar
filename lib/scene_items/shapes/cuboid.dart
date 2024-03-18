@@ -13,6 +13,7 @@ class CuboidItem extends SceneItem {
     required double y,
     required double z,
     required Color colour,
+    super.label,
   })  : _lengthX = x,
         _lengthY = y,
         _lengthZ = z,

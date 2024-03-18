@@ -13,6 +13,7 @@ class RectangleItem extends SceneItem {
     required double x,
     required double y,
     required Color colour,
+    super.label
   })  : _lengthX = x,
         _lengthY = y,
         _colour = colour;

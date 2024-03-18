@@ -21,7 +21,7 @@ class InvertItem extends SceneItem {
       case TriProcessItem():
         pTree.vertices =
             (pTree.vertices.$1, pTree.vertices.$3, pTree.vertices.$2);
-      case LayerProcessItem():
+      case GroupProcessItem():
         pTree.children.map(_applyInvertRecursive);
     }
   }

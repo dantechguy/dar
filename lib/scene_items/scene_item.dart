@@ -2,7 +2,10 @@ import '../key.dart';
 import '../process_items.dart';
 
 abstract class SceneItem {
-  // DrenKey? get key;
+  SceneItem({this.label = ''});
+
+  final String label;
+  // KeyD key;
 
   /* TODO:
       - Change name convention to put "DR" or something afterwards, like "Widget"

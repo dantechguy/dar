@@ -3,14 +3,20 @@ import 'dart:math';
 import 'package:drender/extensions.dart';
 import 'package:vector_math/vector_math.dart';
 
-class DrenCamera {
-  DrenCamera.fromPositiveX({
+class CameraD {
+  CameraD.fromPositiveX({
     required this.position,
     required this.rotation,
     this.fov = 1,
   });
 
-  DrenCamera.lookingAt({
+  CameraD.fromYawPitchRoll({
+    required this.position,
+    required Vector3 yawPitchRoll,
+    this.fov = 1,
+  }) : rotation = Quaternion.euler(yawPitchRoll.x, yawPitchRoll.y, yawPitchRoll.z);
+
+  CameraD.lookingAt({
     required Vector3 position,
     required Vector3 lookPoint,
     double tilt = 0,
@@ -22,7 +28,7 @@ class DrenCamera {
           fov: fov,
         );
 
-  DrenCamera.direction({
+  CameraD.direction({
     required this.position,
     required Vector3 direction,
     double tilt = 0,
@@ -55,4 +61,9 @@ class DrenCamera {
   Vector3 get dir => rotation.rotated(Vector3(1, 0, 0));
 
   Plane get plane => Plane_fromNormalAndPoint(dir, position);
+
+  @override
+  String toString() {
+    return 'CameraD(position: ${position.toShortString()}, dir: ${dir.toShortString()}';
+  }
 }
