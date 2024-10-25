@@ -54,6 +54,7 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: GestureDetector(
+        onTap: () {},
         onPanUpdate: (DragUpdateDetails details) {
           setState(() {
             if (details.globalPosition.dx <
@@ -89,14 +90,10 @@ class _MainScreenState extends State<MainScreen> {
                 ambientLight: const Color.fromRGBO(255, 255, 255, 0.3),
                 directionalLights: [(Vector3(1, 2, 3), Colors.red)],
                 child: TransformItem.fromSRT(
-                    translate: Vector3(0, 0, 0),
+                    translate: Vector3(0, 0, 3),
                     child: RenLayer(
                       children: [
-                        TransformItem.fromSRT(
-                          translate: Vector3(0, 0, 0),
-                          child:
-                              CubeItem.fromSize(size: 1, colour: Colors.white),
-                        ),
+                        CubeItem.fromSize(size: 1, colour: Colors.white),
                       ],
                     )),
               ),
