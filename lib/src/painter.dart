@@ -6,16 +6,16 @@ import 'package:ren/src/render_items.dart';
 import 'package:ren/src/scene.dart';
 import 'package:flutter/material.dart';
 
-class DrenPainter extends CustomPainter {
-  const DrenPainter({
-    this.counter,
+class RenPainter extends CustomPainter {
+  const RenPainter({
     required this.camera,
     required this.items,
+    required this.backgroundColor,
   });
 
   final CameraD camera;
   final List<SceneItem> items;
-  final int? counter;
+  final Color backgroundColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -25,7 +25,7 @@ class DrenPainter extends CustomPainter {
     //   Paint()
     //     ..color = Colors.red,
     // );
-    canvas.drawColor(Colors.white, BlendMode.src);
+    canvas.drawColor(Colors.black, BlendMode.src);
     canvas.translate(size.width / 2, size.height / 2);
     canvas.clipRect(Rect.fromCenter(
         center: Offset.zero, width: size.width, height: size.height));
@@ -45,9 +45,8 @@ class DrenPainter extends CustomPainter {
         .compile(camera)
         .toList();
     // print('rendered ${renderItems.length} items');
-    final count = counter == null ? renderItems.length : counter! % (renderItems.length*1.4).toInt();
     // print(count);
-    for (final r in renderItems.take(count)) {
+    for (final r in renderItems) {
       canvas.save();
       r.render(canvas, size);
       canvas.restore();

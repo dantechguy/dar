@@ -6,8 +6,8 @@ import '../../process_items.dart';
 /// A collection of scene items used for organisation. Has no impact on rendering.
 ///
 /// When compiled, these groups are removed and the tree is flattened.
-class DRenderGroup extends SceneItem {
-  DRenderGroup({
+class RenGroup extends SceneItem {
+  RenGroup({
     required this.children,
   });
 

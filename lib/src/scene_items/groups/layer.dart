@@ -9,8 +9,8 @@ import '../../process_items.dart';
 /// Has the visual appearance of rendering this layer separately, and then
 /// compositing it into the scene afterwards. It means that no other scene items
 /// can appear 'inside' this scene item, only wholly in front or behind.
-class DrenderLayer extends SceneItem {
-  DrenderLayer({
+class RenLayer extends SceneItem {
+  RenLayer({
     required this.children,
   });
 

@@ -12,7 +12,7 @@ class DoubleSideItem extends SceneItem {
 
   @override
   List<ProcessItem> compile() {
-    return DRenderGroup(children: [
+    return RenGroup(children: [
       _child,
       InvertItem(child: _child),
     ]).compile();

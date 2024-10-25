@@ -5,17 +5,17 @@ import 'package:ren/ren.dart';
 
 
 // TODO: Rename to something 'canvas'?
-class ViewDAR extends StatelessWidget {
-  const ViewDAR({
+class RenView extends StatelessWidget {
+  const RenView({
     required this.camera,
     required this.items,
-    this.counter,
+    this.backgroundColor = Colors.black,
     super.key,
   });
 
   final CameraD camera;
   final List<SceneItem> items;
-  final int? counter;
+  final Color backgroundColor;
 
   @override
   Widget build(BuildContext context) {
@@ -23,10 +23,10 @@ class ViewDAR extends StatelessWidget {
       width: double.infinity,
       height: double.infinity,
       child: CustomPaint(
-        painter: DrenPainter(
-          counter: counter,
+        painter: RenPainter(
           camera: camera,
           items: items,
+          backgroundColor: backgroundColor,
         ),
       ),
     );

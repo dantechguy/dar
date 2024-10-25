@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:ren/ren.dart';
 
 
-typedef DrenderPaintCallback = void Function(
+typedef RenPaintCallback = void Function(
     Canvas canvas,
     Size size,
     CameraD camera,
     );
 
-class SceneDAR {
-  SceneDAR({
+class RenScene {
+  RenScene({
     required this.items,
   });
 
