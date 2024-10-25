@@ -41,7 +41,7 @@ class TransformItem extends SceneItem {
           pItem.vertices = pItem.vertices.translateByVector(_translation!);
         // print('transform after: ${pItem.vertices}');
       case GroupProcessItem():
-        pItem.children.map(_applyTransformRecursive);
+        pItem.children.forEach(_applyTransformRecursive);
         // print('transform:');
     }
   }
